@@ -70,6 +70,10 @@ class User:
         # self.session.proxies.update(proxies)
         # self.session.verify = False
 
+    def set_cookie(self, session_id, covid_id):
+        self.session.cookies.set("ASP.NET_SessionId", session_id, domain="selfreport.shu.edu.cn")
+        self.session.cookies.set(".ncov2019selfreport", covid_id, domain="selfreport.shu.edu.cn")
+
     def login(self):
         session = self.session
         r = session.get("https://selfreport.shu.edu.cn/Default.aspx")
@@ -114,13 +118,13 @@ class User:
 
             # 检测是否正在加载
             def is_loading():
-                try:
-                    loading = driver.find_element_by_id("f_ajax_loading")
-                    if loading.is_displayed():
-                        return True
-                except NoSuchElementException:
-                    pass
-                return False
+                js = """return (function(){
+                    let loading = $("#f_ajax_loading"); 
+                    if(loading.length > 0) {return loading.is(":visible");} 
+                    return false; 
+                })(); 
+                """
+                return driver.execute_script(js)
 
             # 等待加载完成
             def waiting_loading():
