@@ -5,8 +5,8 @@ import logging
 
 from rich.logging import RichHandler
 
-import api
-from notify import Notify
+from selfreport import api
+from selfreport.notify import Notify
 
 
 NOTIFY_TITLE = "每日一报bot"
@@ -26,15 +26,15 @@ def run(user, notify):
     history = user.fetch_history()
     if history[0].complete:
         # 已完成
-        notify.telegram(NOTIFY_TITLE, "检测到已被提交: %s" % history[0].desc)
+        notify.notify(NOTIFY_TITLE, "检测到已被提交: %s" % history[0].desc)
     else:
         # 未完成
         ok = user.finish_today()
         if ok:
             history = user.fetch_history()
-            notify.telegram(NOTIFY_TITLE, "自动填报完成: %s" % history[0].desc)
+            notify.notify(NOTIFY_TITLE, "自动填报完成: %s" % history[0].desc)
         else:
-            notify.telegram(NOTIFY_TITLE, "自动填报失败")
+            notify.notify(NOTIFY_TITLE, "自动填报失败")
 
 
 def main():

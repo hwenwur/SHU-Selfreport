@@ -14,7 +14,7 @@ class Notify:
 
     def telegram(self, title, message):
         """
-        Send message from telegram bot.
+        Send message by telegram bot.
         :param title:
         :param message:
         :return: True or False
@@ -32,6 +32,12 @@ class Notify:
         return True
 
     def email(self, title, message):
+        """
+        Send message by email
+        :param title:
+        :param message:
+        :return:
+        """
         config = self._config["email"]
         host, port = config["server"].split(":")
         port = int(port)
@@ -47,3 +53,11 @@ class Notify:
         except smtplib.SMTPException as e:
             logger.exception(e)
             return False
+
+    def notify(self, title, message):
+        channel = self._config["channel"]
+        try:
+            func = getattr(self, channel)
+        except AttributeError:
+            raise ValueError("Invalid channel name")
+        return func(title, message)

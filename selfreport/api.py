@@ -3,10 +3,10 @@ import logging
 import time
 from collections import namedtuple
 
-import utils
+from . import utils
 import requests
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.common.exceptions import ElementNotInteractableException
 
 
 # RSA 公钥
@@ -65,8 +65,8 @@ class User:
         self.session = requests.Session()
         self.session.headers.update(headers)
         # proxies = {
-        #     "http": "http://127.0.0.1:8080",
-        #     "https": "http://127.0.0.1:8080"
+        #     "http": "http://127.0.0.1:7890",
+        #     "https": "http://127.0.0.1:7890"
         # }
         # self.session.proxies.update(proxies)
         # self.session.verify = False
