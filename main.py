@@ -1,18 +1,48 @@
-import logging
+import os
 import base64
 import json
+import logging
+
 from rich.logging import RichHandler
+
 import api
+from notify import Notify
 
 
-logging.basicConfig(level=logging.DEBUG, handlers=[RichHandler()])
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("selenium").setLevel(logging.WARNING)
+NOTIFY_TITLE = "每日一报bot"
+
+
+def setup_logger(file_path):
+    hds = [logging.FileHandler(file_path)]
+    if os.isatty(2):
+        hds.append(RichHandler())
+    logging.basicConfig(level=logging.DEBUG, handlers=hds)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("selenium").setLevel(logging.WARNING)
+
+
+def run(user, notify):
+    user.login()
+    history = user.fetch_history()
+    if history[0].complete:
+        # 已完成
+        notify.telegram(NOTIFY_TITLE, "检测到已被提交: %s" % history[0].desc)
+    else:
+        # 未完成
+        ok = user.finish_today()
+        if ok:
+            history = user.fetch_history()
+            notify.telegram(NOTIFY_TITLE, "自动填报完成: %s" % history[0].desc)
+        else:
+            notify.telegram(NOTIFY_TITLE, "自动填报失败")
 
 
 def main():
     with open("config.json", "r") as cfg:
         config = json.load(cfg)
+
+    setup_logger(config["log_path"])
+    notify = Notify(config["notify"])
 
     chrome_driver = config["chrome_driver"]
     password = config["password"]
@@ -21,18 +51,13 @@ def main():
 
     user = api.User(username, password, chrome_driver)
 
-    # for debug
-    # ------
-    # user.session.cookies.set(".ncov2019selfreport", "1E75A6FBF888B4212DAE6BC032CB408711E23B4B340DCE33243823948BB615663B7EBB97C895AE8AC98883D361A07A8D7B52BA0EE52ADE00E4A4FB921B241943DC2E5835102E2F2B5387DAD0522482C18AAADA2EBA7879FC28BE852CBB07A8632931C557943ABE2D031CADE76A4C401C", domain="selfreport.shu.edu.cn")
-    # user.session.cookies.set("ASP.NET_SessionId", "ja5u2uonanyas1axcb0vnuhb", domain="selfreport.shu.edu.cn")
-    # ------
-    user.login()
-    # https://selfreport.shu.edu.cn/res/css/slick.css
-    # history = user.fetch_history()
-    if user.finish_today():
-        print("填报成功")
-    else:
-        print("填报失败")
+    try:
+        run(user, notify)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        notify.telegram(NOTIFY_TITLE, "程序运行失败：%s" % str(e))
+        raise
 
 
 if __name__ == '__main__':

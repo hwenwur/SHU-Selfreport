@@ -20,6 +20,7 @@ wTBNePOk1H+LRQokgQIDAQAB
 
 # group: 1 - description, 2 - url location
 HISTORY_RE = re.compile(r'\["","(.*?)",\d+,"","(.*?)","",(?:true|false)]')
+Record = namedtuple("Record", ["complete", "desc", "location"])
 Question = namedtuple("Question", ["desc", "xpath", "type_"])
 FORM = [
     Question(
@@ -57,10 +58,10 @@ logger = logging.getLogger(__name__)
 
 
 class User:
-    def __init__(self, username, passwd, chrome_driver_path):
+    def __init__(self, username, passwd, chrome_driver):
         self.username = username
         self.passwd = passwd
-        self.chrome_driver_path = chrome_driver_path
+        self.chrome_driver= chrome_driver
         self.session = requests.Session()
         self.session.headers.update(headers)
         # proxies = {
@@ -70,9 +71,10 @@ class User:
         # self.session.proxies.update(proxies)
         # self.session.verify = False
 
-    def set_cookie(self, session_id, covid_id):
-        self.session.cookies.set("ASP.NET_SessionId", session_id, domain="selfreport.shu.edu.cn")
-        self.session.cookies.set(".ncov2019selfreport", covid_id, domain="selfreport.shu.edu.cn")
+    def set_cookie(self, oauth_session, asp_session_id, ncov2019selfreport):
+        self.session.cookies.set("SHU_OAUTH2_SESSION", oauth_session, domain="newsso.shu.edu.cn")
+        self.session.cookies.set("ASP.NET_SessionId", asp_session_id, domain="selfreport.shu.edu.cn")
+        self.session.cookies.set(".ncov2019selfreport", ncov2019selfreport, domain="selfreport.shu.edu.cn")
 
     def login(self):
         session = self.session
@@ -97,22 +99,45 @@ class User:
         :return: [("2021-06-17(未填报，请点击此处补报)", "/DayReport.aspx?day=2021-06-17"), ...]
         """
         r = self.session.get("https://selfreport.shu.edu.cn/ReportHistory.aspx")
+        if not r.url.startswith("https://selfreport.shu.edu.cn/"):
+            raise RuntimeError("invalid cookie")
         js_object = utils.substring(r.text, "f2_state=", ";")
         history = HISTORY_RE.findall(js_object)
-        return history
+        ret = []
+        for desc, url in history:
+            if "未填报" in desc:
+                ret.append(Record(complete=False, desc=desc, location=url))
+            else:
+                ret.append(Record(complete=True, desc=desc, location=url))
+        return ret
 
     def finish_today(self):
         """
         调用 selenium 完成当天的 每日一报
         :return: None
         """
-        with webdriver.Chrome(executable_path=self.chrome_driver_path) as driver:
-            # 设置 cookies
+        options = webdriver.ChromeOptions()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--headless")
+        if self.chrome_driver.startswith("http"):
+            chrome = webdriver.Remote
+        else:
+            chrome = webdriver.Chrome
+        with chrome(self.chrome_driver, desired_capabilities=options.to_capabilities()) \
+                as driver:
+            # 设置 selfreport.shu.edu.cn cookie
             driver.get("https://selfreport.shu.edu.cn/res/css/slick.css")
             cookies_name = ["ASP.NET_SessionId", ".ncov2019selfreport"]
             cookiejar = self.session.cookies
             for name in cookies_name:
                 driver.add_cookie(dict(name=name, value=cookiejar.get(name, domain="selfreport.shu.edu.cn")))
+
+            # 设置 newsso.shu.edu.cn cookie
+            driver.get("https://newsso.shu.edu.cn/static/css/alert-a1b99b3681.css")
+            driver.add_cookie(dict(
+                name="SHU_OAUTH2_SESSION",
+                value=cookiejar.get("SHU_OAUTH2_SESSION", domain="newsso.shu.edu.cn")
+            ))
             # 打开填报页面
             # TODO 处理“历史填报未完成弹窗”
 
@@ -136,7 +161,7 @@ class User:
             driver.get("https://selfreport.shu.edu.cn/DayReport.aspx")
 
             if not driver.current_url.startswith("https://selfreport.shu.edu.cn/DayReport.aspx"):
-                logger.info("invalid cookies")
+                logger.info("invalid cookies, page redirect to: %s", driver.current_url)
                 return False
 
             for ques in FORM:

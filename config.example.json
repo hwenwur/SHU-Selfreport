@@ -2,6 +2,7 @@
   "username": "学号",
   "password": "base64 密码",
   "chrome_driver": "D:\\path\\to\\chromedriver.exe",
+  "log_path": "logging.txt",
   "notify": {
     "telegram": {
       "chat_id": 123456789,
