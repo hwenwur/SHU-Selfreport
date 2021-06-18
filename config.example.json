@@ -1,5 +1,11 @@
 {
   "username": "学号",
   "password": "base64 密码",
-  "chrome_driver": "D:\\path\\to\\chromedriver.exe"
+  "chrome_driver": "D:\\path\\to\\chromedriver.exe",
+  "notify": {
+    "telegram": {
+      "chat_id": 123456789,
+      "api_url": "https://api.telegram.org/bot123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+    }
+  }
 }
