@@ -16,7 +16,7 @@ def setup_logger(file_path):
     hds = [logging.FileHandler(file_path)]
     if os.isatty(2):
         hds.append(RichHandler())
-    logging.basicConfig(level=logging.DEBUG, handlers=hds)
+    logging.basicConfig(format="%(asctime)s " + logging.BASIC_FORMAT, level=logging.DEBUG, handlers=hds)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("selenium").setLevel(logging.WARNING)
 
