@@ -1,4 +1,7 @@
 import logging
+import smtplib
+from email.header import Header
+from email.mime.text import MIMEText
 import requests
 
 
@@ -27,3 +30,20 @@ class Notify:
             logger.error("telegram notify failed. status_code: %s, source: %s", r.status_code, r.json())
             return False
         return True
+
+    def email(self, title, message):
+        config = self._config["email"]
+        host, port = config["server"].split(":")
+        port = int(port)
+        serv = smtplib.SMTP_SSL(host, port)
+        msg = MIMEText(message, "plain", "utf-8")
+        msg["From"] = Header(config["username"], "utf-8")
+        msg["To"] = Header(config["receiver"], "utf-8")
+        msg["Subject"] = Header(title, "utf-8")
+        try:
+            serv.login(config["username"], config["password"])
+            serv.sendmail(config["username"], config["receiver"], msg.as_string())
+            return True
+        except smtplib.SMTPException as e:
+            logger.exception(e)
+            return False
