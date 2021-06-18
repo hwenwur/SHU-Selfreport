@@ -1,0 +1,5 @@
+{
+  "username": "学号",
+  "password": "base64 密码",
+  "chrome_driver": "D:\\path\\to\\chromedriver.exe"
+}
