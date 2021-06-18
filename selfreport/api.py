@@ -96,7 +96,8 @@ class User:
     def fetch_history(self):
         """
         获取历史填报记录
-        :return: [("2021-06-17(未填报，请点击此处补报)", "/DayReport.aspx?day=2021-06-17"), ...]
+
+        :return: [Record(False, "2021-06-17(未填报，请点击此处补报)", "/DayReport.aspx?day=2021-06-17"), ...]
         """
         r = self.session.get("https://selfreport.shu.edu.cn/ReportHistory.aspx")
         if not r.url.startswith("https://selfreport.shu.edu.cn/"):
@@ -114,7 +115,7 @@ class User:
     def finish_today(self):
         """
         调用 selenium 完成当天的 每日一报
-        :return: None
+        :return: True on success, False on failed
         """
         options = webdriver.ChromeOptions()
         options.add_argument("--no-sandbox")

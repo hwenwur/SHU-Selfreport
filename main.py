@@ -56,7 +56,7 @@ def main():
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        notify.telegram(NOTIFY_TITLE, "程序运行失败：%s" % str(e))
+        notify.notify(NOTIFY_TITLE, "程序运行失败：%s" % str(e))
         raise
 
 
