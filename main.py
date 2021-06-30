@@ -10,6 +10,7 @@ from selfreport.notify import Notify
 
 
 NOTIFY_TITLE = "每日一报bot"
+logger = logging.getLogger(__name__)
 
 
 def setup_logger(file_path):
@@ -26,14 +27,17 @@ def run(user, notify):
     history = user.fetch_history()
     if history[0].complete:
         # 已完成
+        logger.info("检测到已被提交")
         notify.notify(NOTIFY_TITLE, "检测到已被提交: %s" % history[0].desc)
     else:
         # 未完成
+        logger.info("开始自动填报...")
         ok = user.finish_today()
         if ok:
             history = user.fetch_history()
             notify.notify(NOTIFY_TITLE, "自动填报完成: %s" % history[0].desc)
         else:
+            logger.info("自动填报失败")
             notify.notify(NOTIFY_TITLE, "自动填报失败")
 
 
@@ -57,6 +61,7 @@ def main():
         pass
     except Exception as e:
         notify.notify(NOTIFY_TITLE, "程序运行失败：%s" % str(e))
+        logger.critical("程序运行失败", exc_info=e, stack_info=True)
         raise
 
 
