@@ -128,7 +128,8 @@ class User:
                 as driver:
             # 设置 selfreport.shu.edu.cn cookie
             driver.get("https://selfreport.shu.edu.cn/res/css/slick.css")
-            cookies_name = ["ASP.NET_SessionId", ".ncov2019selfreport"]
+            # cookies_name = ["ASP.NET_SessionId", ".ncov2019selfreport"]
+            cookies_name = [".ncov2019selfreport"]
             cookiejar = self.session.cookies
             for name in cookies_name:
                 driver.add_cookie(dict(name=name, value=cookiejar.get(name, domain="selfreport.shu.edu.cn")))
