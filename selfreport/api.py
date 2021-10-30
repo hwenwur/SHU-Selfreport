@@ -179,11 +179,14 @@ class User:
             if not is_ok:
                 logger.warning("表单未完成")
                 return False
+            else:
+                logger.info("表单校验完成")
 
             # 提交表单
             driver.execute_script("__doPostBack('p1$ctl01$btnSubmit', '');")
             waiting_loading()
             if "日报信息提交成功" in driver.page_source:
+                logger.info("提交成功")
                 return True
             else:
                 logger.warning("提交失败")
