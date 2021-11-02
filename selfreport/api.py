@@ -183,7 +183,7 @@ class User:
                 logger.info("表单校验完成")
 
             # 提交表单
-            driver.execute_script("__doPostBack('p1$ctl01$btnSubmit', '');")
+            driver.execute_script("__doPostBack('p1$ctl02$btnSubmit', '');")
             waiting_loading()
             if "日报信息提交成功" in driver.page_source:
                 logger.info("提交成功")
