@@ -50,6 +50,8 @@ FORM = [
     )
 ]
 
+SAFETY_CHOICE_XPATH = "//div[@id='p1_pnlDangSZS_DangSZS']//div[@id='fineui_%d']"
+
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.101 Safari/537.36",
     "Accept-Language": "zh-CN,zh;q=0.9"
@@ -158,7 +160,20 @@ class User:
                 time.sleep(1)
                 while is_loading():
                     print("Waiting for loading...")
-                    time.sleep(0.1)
+                    time.sleep(1)
+
+            # 获取安全知识答案
+            def get_answer():
+                """
+                :return: (0, 1) # 0 表示 A, 1 表示 B...
+                """
+                element = driver.find_element_by_xpath("//div[@id='p1_pnlDangSZS_ckda-inputEl']/a")
+                text = element.get_attribute("onclick")  # javascript:alert('参考答案：A');
+                start = text.index("：") + 1
+                end = text.index("'", start)
+                answer = text[start:end]
+                answer = map(lambda x: ord(x) - ord('A'), list(answer))
+                return answer
 
             driver.get("https://selfreport.shu.edu.cn/DayReport.aspx")
 
@@ -174,7 +189,15 @@ class User:
                 except ElementNotInteractableException:
                     logger.error("ElementNotInteractableException: %s", ques.desc)
 
-            # 校验表单
+            # 回答 消防安全问题
+            for ans in get_answer():
+                element = driver.find_element_by_xpath(SAFETY_CHOICE_XPATH % ans)
+                try:
+                    element.click()
+                except ElementNotInteractableException:
+                    logger.error("ElementNotInteractableException: failed to click safety question choice")
+
+            # 校验表单，这里没有判断 消防安全问题是否已回答
             is_ok = driver.execute_script("return F.validateForm('p1', '_self', true, false);")
             if not is_ok:
                 logger.warning("表单未完成")
